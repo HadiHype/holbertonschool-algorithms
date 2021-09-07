@@ -1,1 +1,1 @@
-Double linked list project
+# Learning Algorithms : Doubly linked list

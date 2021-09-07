@@ -1,21 +1,20 @@
-#include <stdio.h>
 #include "lists.h"
 
 /**
- * size_t dlistint_len - function return nb of elements
- * @h: pointer
+ * dlistint_len - function with one argument
+ * @h: pointer to doubly linked list
  *
- * Description: print the total nb of elements
- * Return: number of elements
+ * Description: count number of elements in doubly
+ * Return: total number of elements
  */
 size_t dlistint_len(const dlistint_t *h)
 {
-        size_t count = 0;
+	size_t count = 0;
 
-        while (h)
-        {
-                h = h->next;
-                count++;
-        }
-        return (count);
+	while (h)
+	{
+		h = h->next;
+		count++;
+	}
+	return (count);
 }

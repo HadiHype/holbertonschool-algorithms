@@ -3,9 +3,9 @@
 
 /**
  * print_dlistint - function with one arguments
- * @h: pointer
+ * @h: linked list pointer
  *
- * Description: print all elements
+ * Description: prints all the elements of doubly linked list
  * Return: number of nodes
  */
 size_t print_dlistint(const dlistint_t *h)

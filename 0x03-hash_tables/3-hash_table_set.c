@@ -1,26 +1,53 @@
 #include "hash_tables.h"
-#include "string.h"
-#include <stdio.h>
-
-hash_node_t *new_node(const char *key, const char *value);
 
 /**
- *hash_table_set - add elements to the hash table
- *@ht: hashtable to add onto
- *@key: key that can not be an empty string
- *@value: the value associated with the key
+ * new_node - allocates a new node with checking
+ * @key: the string key
+ * @value: the string value
  *
- *Return: int
+ * Return: the node or NULL
+ */
+hash_node_t *new_node(const char *key, const char *value)
+{
+	hash_node_t *node;
+
+	node = calloc(1, sizeof(hash_node_t));
+	if (!node)
+		return (0);
+
+	node->key = strdup(key);
+	if (!node->key)
+	{
+		free(node);
+		return (0);
+	}
+	node->value = strdup(value);
+	if (!node->value)
+	{
+		free(node->key);
+		free(node);
+		return (0);
+	}
+
+	return (node);
+}
+
+
+/**
+ * hash_table_set - adds an element to a hash table
+ * @ht: pointer to hash table
+ * @key: the string key
+ * @value: the string value
+ *
+ * Return: 1 on success, 0 otherwise
  */
 int hash_table_set(hash_table_t *ht, const char *key, const char *value)
 {
 	hash_node_t *node = NULL, *head;
 	unsigned long int index;
 
-	if(!ht || !key || !*key || !value)
-	{
+	if (!ht || !key || !*key || !value)
 		return (0);
-	}
 
 	index = key_index((const unsigned char *)key, ht->size);
 	head = ht->array[index];
@@ -44,34 +71,4 @@ int hash_table_set(hash_table_t *ht, const char *key, const char *value)
 	node->next = ht->array[index];
 	ht->array[index] = node;
 	return (1);
-}
-
-/**
- * new_node - add a new node
- * @key: node key
- * @value: value of key
- *
- * Return: the node
- */
-hash_node_t *new_node(const char *key, const char *value)
-{
-	hash_node_t *node;
-
-	node = calloc(1, sizeof(hash_node_t));
-
-	node->key = strdup(key);
-	if (!node->key)
-	{
-		free(node);
-		return (0);
-	}
-
-	node->value = strdup(value);
-	if (!node->value)
-	{
-		free(node->key);
-		free(node);
-		return (0);
-	}
-	return (node);
 }

@@ -1,115 +1,92 @@
+#include <stdbool.h>
+
 #include "graphs.h"
-#include <stdio.h>
+
 
 /**
- * breadth_first_traverse - traverse a graph by exploring sibling edges before
- * exploring child edges
+ * bft - perform breadth-first traversal over a graph
  *
- * @graph: graph to traverse
- * @action: action to take on each vertex
+ * @vertex: pointer to the starting vertex
+ * @action: pointer to a function to apply to each vertex
+ * @queue: pointer to the front of a vertex queue
+ * @queued: pointer to a table of queued vertices
+ * @depths: pointer to a table of vertex depths
  *
- * Return: depth of traversal
+ * Return: Upon failure, return 0.
+ * Otherwise, return the greatest vertex depth.
  */
-size_t breadth_first_traverse(const graph_t *graph,
-			      void (*action)(const vertex_t *v, size_t depth))
+static size_t bft(
+	const vertex_t *vertex, void (*action)(const vertex_t *, size_t),
+	const vertex_t **queue, bool *queued, size_t *depths)
 {
-	size_t depth = 0, i, new_depth;
-	vlist_t *v_and_d;
-	visited_type_t *visited;
-	vertex_t *vertex;
-	queue_t queue = {NULL, NULL};
-	edge_t *edge;
+	const vertex_t **queue_rear = queue;
+	const edge_t *edge = NULL;
+	size_t depth = 0;
 
-	if (graph == NULL || action == NULL)
-		return (0);
-	/* Initialize visited array to 0's */
-	visited = malloc(sizeof(visited_type_t) * graph->nb_vertices);
-	for (i = 0; i < graph->nb_vertices; i++)
-		visited[i] = WHITE;
-	if (graph->vertices == NULL ||
-	    push(&queue, graph->vertices, depth) == NULL)
+	*queue_rear++ = vertex;
+	queued[vertex->index] = true;
+	depths[vertex->index] = 0;
+	while (queue != queue_rear)
 	{
-		free(visited);
-		return (0);
-	}
-	while ((v_and_d = pop(&queue)))
-	{
-		vertex = v_and_d->vertex;
-		new_depth = v_and_d->depth;
-		free(v_and_d);
-		if (new_depth > depth && visited[vertex->index] == WHITE)
-			depth = new_depth;
-		if (vertex)
+		vertex = *queue++;
+		depth = depths[vertex->index];
+		action(vertex, depth);
+		for (edge = vertex->edges; edge; edge = edge->next)
 		{
-			if (visited[vertex->index] == WHITE)
-				action(vertex, depth);
-			visited[vertex->index] = BLACK;
-			for (edge = vertex->edges; edge != NULL; edge = edge->next)
+			if (!queued[edge->dest->index])
 			{
-				if (edge->dest && visited[edge->dest->index] == WHITE)
-					if (push(&queue, edge->dest, new_depth + 1) == NULL)
-					{
-						free(visited);
-						return (0);
-					}
+				*queue_rear++ = edge->dest;
+				queued[edge->dest->index] = true;
+				depths[edge->dest->index] = depth + 1;
 			}
 		}
 	}
-	free(visited);
 	return (depth);
 }
 
-/**
- * push - push a vertex onto the queue
- *
- * @queue: queue to push onto
- * @vertex: vertex to push
- * @depth: depth of vertex in traversal
- *
- * Return: pointer to list node, or NULL on failure
- */
-vlist_t *push(queue_t *queue, vertex_t *vertex, size_t depth)
-{
-	vlist_t *new_node;
-
-	new_node = malloc(sizeof(vlist_t));
-	if (new_node == NULL)
-		return (NULL);
-	new_node->vertex = vertex;
-	new_node->depth = depth;
-	new_node->prev = NULL;
-	if (queue->head == NULL && queue->tail == NULL)
-	{
-		queue->head = new_node;
-		queue->tail = new_node;
-		new_node->next = NULL;
-	}
-	else
-	{
-		queue->head->prev = new_node;
-		new_node->next = queue->head;
-		queue->head = new_node;
-	}
-	return (new_node);
-}
 
 /**
- * pop - pop a node off of a queue tail
+ * breadth_first_traverse - perform breadth-first traversal over a graph
  *
- * @queue: queue to pop from
+ * @graph: pointer to the graph to traverse
+ * @action: pointer to a function to apply to each vertex
  *
- * Return: vertex of popped node
+ * Return: Upon failure, return 0.
+ * Otherwise, return the greatest vertex depth.
  */
-vlist_t *pop(queue_t *queue)
+size_t breadth_first_traverse(
+	const graph_t *graph, void (*action)(const vertex_t *, size_t))
 {
-	vlist_t *node;
+	const vertex_t **queue = NULL;
+	bool *queued = NULL;
+	size_t *depths = NULL;
+	size_t depth = 0;
 
-	if (queue->tail == NULL)
-		return (NULL);
-	node = queue->tail;
-	queue->tail = node->prev;
-	if (queue->head == node)
-		queue->head = NULL;
-
-	return (node);
+	if (!graph || !graph->vertices)
+	{
+		return (0);
+	}
+	queue = calloc(graph->nb_vertices, sizeof(*queue));
+	if (!queue)
+	{
+		return (0);
+	}
+	queued = calloc(graph->nb_vertices, sizeof(*queued));
+	if (!queued)
+	{
+		free(queue);
+		return (0);
+	}
+	depths = calloc(graph->nb_vertices, sizeof(*depths));
+	if (!depths)
+	{
+		free(queue);
+		free(queued);
+		return (0);
+	}
+	depth = bft(graph->vertices, action, queue, queued, depths);
+	free(queue);
+	free(queued);
+	free(depths);
+	return (depth);
 }
